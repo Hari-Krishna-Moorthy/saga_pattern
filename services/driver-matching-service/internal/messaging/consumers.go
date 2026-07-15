@@ -24,7 +24,11 @@ func Run(ctx context.Context, brokers []string, svc *domain.Service, idem idempo
 
 	for topic, handle := range handlers {
 		go func(topic string, handle kafka.Handler) {
-			reader := kafka.NewReader(brokers, topic, groupID)
+			// Each topic gets its own group ID: Kafka consumer groups
+			// expect every member to subscribe to the same topic set, so
+			// sharing one group ID across topics with different handlers
+			// breaks partition assignment.
+			reader := kafka.NewReader(brokers, topic, groupID+"."+topic)
 			defer reader.Close()
 
 			err := reader.Run(ctx, func(ctx context.Context, evt events.Envelope) error {
