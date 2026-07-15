@@ -103,6 +103,24 @@ To force the compensation path against the live stack, run `payment-service` wit
 `DECLINE_BOOKING_IDS=<booking-id>` set (comma-separated) — it's a simulated gateway,
 not a real payment processor.
 
+### Simulating the whole saga
+
+`scripts/simulate-saga.sh` drives all three outcomes against the running stack and
+prints what happened at each step — no manual `curl`/`psql` needed:
+
+```
+./scripts/simulate-saga.sh            # use whatever's already running
+./scripts/simulate-saga.sh --fresh    # docker compose down -v && up --build first
+```
+
+It runs, in order: the happy path (booking -> matched -> paid -> `CONFIRMED`), the
+no-driver compensation (exhausts the 3-driver pool, then shows the next booking
+get `CANCELLED`), and the payment-declined compensation (temporarily swaps in a
+`payment-service` configured to decline one specific booking via
+`DECLINE_BOOKING_IDS`, confirms the booking cancels *and* the driver is released,
+then restores the normal `payment-service`). Exits non-zero if any scenario
+doesn't reach the expected terminal state within the timeout.
+
 ## Development workflow
 
 Every saga reaction was built BDD-first: a Gherkin scenario in each service's
