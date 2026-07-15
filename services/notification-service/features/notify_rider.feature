@@ -6,3 +6,7 @@ Feature: Notifying the rider of saga outcomes
   Scenario: The ride is confirmed
     When the ride is confirmed for booking "booking-1"
     Then the rider should be notified for booking "booking-1" with a message containing "confirmed"
+
+  Scenario: The booking is cancelled
+    When booking "booking-2" is cancelled with reason "no driver available"
+    Then the rider should be notified for booking "booking-2" with a message containing "no driver available"

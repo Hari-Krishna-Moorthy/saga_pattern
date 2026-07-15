@@ -33,6 +33,17 @@ func (t *notificationTestCtx) theRideIsConfirmedForBooking(bookingID string) err
 	return t.lastErr
 }
 
+func (t *notificationTestCtx) bookingIsCancelledWithReason(bookingID, reason string) error {
+	evt, err := events.NewEnvelope(events.TopicBookingCancelled, bookingID, struct {
+		Reason string `json:"reason"`
+	}{Reason: reason})
+	if err != nil {
+		return err
+	}
+	t.lastErr = t.service.HandleBookingCancelled(context.Background(), evt)
+	return t.lastErr
+}
+
 func (t *notificationTestCtx) theRiderShouldBeNotifiedForBookingWithMessageContaining(bookingID, needle string) error {
 	notifications := t.notifier.notificationsForBooking(bookingID)
 	for _, n := range notifications {
@@ -52,6 +63,7 @@ func InitializeScenario(sc *godog.ScenarioContext) {
 	})
 
 	sc.Step(`^the ride is confirmed for booking "([^"]*)"$`, t.theRideIsConfirmedForBooking)
+	sc.Step(`^booking "([^"]*)" is cancelled with reason "([^"]*)"$`, t.bookingIsCancelledWithReason)
 	sc.Step(`^the rider should be notified for booking "([^"]*)" with a message containing "([^"]*)"$`, t.theRiderShouldBeNotifiedForBookingWithMessageContaining)
 }
 
