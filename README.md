@@ -8,6 +8,9 @@ is no central orchestrator.
 Built test-first: every saga reaction is driven out via a Gherkin/Godog BDD scenario
 before the production wiring goes in (see [Development workflow](#development-workflow)).
 
+**Full documentation** — architecture, tech stack, every service's methods, every
+BDD feature, and every infra piece — lives in [`docs/`](docs/README.md).
+
 ## Services
 
 | Service | Owns | Reacts to | Publishes |
