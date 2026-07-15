@@ -20,6 +20,9 @@ type Repository interface {
 	// FindAvailableDriver returns an AVAILABLE driver, or ErrNoDriverAvailable.
 	FindAvailableDriver(ctx context.Context) (Driver, error)
 	AssignDriver(ctx context.Context, driverID, bookingID string) error
+	// FindByBookingID returns the driver currently assigned to a booking.
+	FindByBookingID(ctx context.Context, bookingID string) (Driver, error)
+	ReleaseDriver(ctx context.Context, driverID string) error
 }
 
 // Service is the driver-matching-service's saga participant.
@@ -61,4 +64,24 @@ func (s *Service) HandleBookingRequested(ctx context.Context, evt events.Envelop
 		return err
 	}
 	return s.publisher.Publish(ctx, events.TopicDriverMatched, matchedEvt)
+}
+
+// HandlePaymentFailed is the compensation for a matched driver: payment
+// could not be taken, so the driver reserved for this booking is released
+// back to the pool.
+func (s *Service) HandlePaymentFailed(ctx context.Context, evt events.Envelope) error {
+	driver, err := s.repo.FindByBookingID(ctx, evt.BookingID)
+	if err != nil {
+		return err
+	}
+
+	if err := s.repo.ReleaseDriver(ctx, driver.ID); err != nil {
+		return err
+	}
+
+	releasedEvt, err := events.NewEnvelope(events.TopicDriverReleased, evt.BookingID, struct{}{})
+	if err != nil {
+		return err
+	}
+	return s.publisher.Publish(ctx, events.TopicDriverReleased, releasedEvt)
 }

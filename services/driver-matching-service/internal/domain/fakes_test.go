@@ -2,6 +2,7 @@ package domain_test
 
 import (
 	"context"
+	"fmt"
 	"sync"
 
 	"github.com/Hari-Krishna-Moorthy/ride-booking-saga/services/driver-matching-service/internal/domain"
@@ -42,6 +43,27 @@ func (r *fakeRepository) AssignDriver(_ context.Context, driverID, bookingID str
 	d := r.drivers[driverID]
 	d.Status = domain.DriverMatched
 	d.AssignedBookingID = bookingID
+	r.drivers[driverID] = d
+	return nil
+}
+
+func (r *fakeRepository) FindByBookingID(_ context.Context, bookingID string) (domain.Driver, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	for _, d := range r.drivers {
+		if d.AssignedBookingID == bookingID {
+			return d, nil
+		}
+	}
+	return domain.Driver{}, fmt.Errorf("no driver assigned to booking %s", bookingID)
+}
+
+func (r *fakeRepository) ReleaseDriver(_ context.Context, driverID string) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	d := r.drivers[driverID]
+	d.Status = domain.DriverAvailable
+	d.AssignedBookingID = ""
 	r.drivers[driverID] = d
 	return nil
 }

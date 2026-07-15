@@ -56,6 +56,26 @@ func (t *matchingTestCtx) driverShouldBeAssignedToBooking(driverID, bookingID st
 	return nil
 }
 
+func (t *matchingTestCtx) paymentFailsForBooking(bookingID string) error {
+	evt, err := events.NewEnvelope(events.TopicPaymentFailed, bookingID, struct{}{})
+	if err != nil {
+		return err
+	}
+	t.lastErr = t.service.HandlePaymentFailed(context.Background(), evt)
+	return t.lastErr
+}
+
+func (t *matchingTestCtx) driverShouldBeAvailableAgain(driverID string) error {
+	d := t.repo.driverByID(driverID)
+	if d.Status != domain.DriverAvailable {
+		return fmt.Errorf("expected driver %s to be AVAILABLE, got %s", driverID, d.Status)
+	}
+	if d.AssignedBookingID != "" {
+		return fmt.Errorf("expected driver %s to have no assigned booking, got %s", driverID, d.AssignedBookingID)
+	}
+	return nil
+}
+
 func (t *matchingTestCtx) anEventShouldBePublishedForBooking(topic, bookingID string) error {
 	published := t.publisher.eventsOnTopic(topic)
 	for _, evt := range published {
@@ -79,6 +99,8 @@ func InitializeScenario(sc *godog.ScenarioContext) {
 	sc.Step(`^booking "([^"]*)" is requested$`, t.bookingIsRequested)
 	sc.Step(`^driver "([^"]*)" should be assigned to booking "([^"]*)"$`, t.driverShouldBeAssignedToBooking)
 	sc.Step(`^a "([^"]*)" event should be published for booking "([^"]*)"$`, t.anEventShouldBePublishedForBooking)
+	sc.Step(`^payment fails for booking "([^"]*)"$`, t.paymentFailsForBooking)
+	sc.Step(`^driver "([^"]*)" should be available again$`, t.driverShouldBeAvailableAgain)
 }
 
 func TestFeatures(t *testing.T) {
