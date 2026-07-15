@@ -10,11 +10,11 @@ import (
 // Envelope is the wire format for every event published across the saga.
 // EventID is used as the idempotency key by consumers.
 type Envelope struct {
-	EventID     string          `json:"event_id"`
-	Type        string          `json:"type"`
-	BookingID   string          `json:"booking_id"`
-	OccurredAt  time.Time       `json:"occurred_at"`
-	Payload     json.RawMessage `json:"payload"`
+	EventID    string          `json:"event_id"`
+	Type       string          `json:"type"`
+	BookingID  string          `json:"booking_id"`
+	OccurredAt time.Time       `json:"occurred_at"`
+	Payload    json.RawMessage `json:"payload"`
 }
 
 func NewEnvelope(eventType, bookingID string, payload any) (Envelope, error) {
