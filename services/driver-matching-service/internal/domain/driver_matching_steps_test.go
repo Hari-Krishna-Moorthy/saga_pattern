@@ -31,6 +31,10 @@ func (t *matchingTestCtx) aDriverIsAvailable(driverID string) error {
 	return nil
 }
 
+func (t *matchingTestCtx) noDriversAreAvailable() error {
+	return nil // fake repository starts empty; nothing to do
+}
+
 func (t *matchingTestCtx) bookingIsRequested(bookingID string) error {
 	t.bookingID = bookingID
 	evt, err := events.NewEnvelope(events.TopicBookingRequested, bookingID, struct{}{})
@@ -71,6 +75,7 @@ func InitializeScenario(sc *godog.ScenarioContext) {
 	})
 
 	sc.Step(`^a driver "([^"]*)" is available$`, t.aDriverIsAvailable)
+	sc.Step(`^no drivers are available$`, t.noDriversAreAvailable)
 	sc.Step(`^booking "([^"]*)" is requested$`, t.bookingIsRequested)
 	sc.Step(`^driver "([^"]*)" should be assigned to booking "([^"]*)"$`, t.driverShouldBeAssignedToBooking)
 	sc.Step(`^a "([^"]*)" event should be published for booking "([^"]*)"$`, t.anEventShouldBePublishedForBooking)
