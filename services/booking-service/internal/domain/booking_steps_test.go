@@ -78,6 +78,15 @@ func (t *bookingTestCtx) noDriverIsAvailableForTheBooking() error {
 	return t.lastErr
 }
 
+func (t *bookingTestCtx) paymentFailsForTheBooking() error {
+	evt, err := events.NewEnvelope(events.TopicPaymentFailed, t.booking.ID, struct{}{})
+	if err != nil {
+		return err
+	}
+	t.lastErr = t.service.HandlePaymentFailed(context.Background(), evt)
+	return t.lastErr
+}
+
 func InitializeScenario(sc *godog.ScenarioContext) {
 	t := &bookingTestCtx{}
 
@@ -92,6 +101,7 @@ func InitializeScenario(sc *godog.ScenarioContext) {
 	sc.Step(`^a "([^"]*)" event should be published for the booking$`, t.anEventShouldBePublishedForTheBooking)
 	sc.Step(`^payment completes for the booking$`, t.paymentCompletesForTheBooking)
 	sc.Step(`^no driver is available for the booking$`, t.noDriverIsAvailableForTheBooking)
+	sc.Step(`^payment fails for the booking$`, t.paymentFailsForTheBooking)
 }
 
 func TestFeatures(t *testing.T) {

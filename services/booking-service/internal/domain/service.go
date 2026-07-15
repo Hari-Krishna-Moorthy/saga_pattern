@@ -97,6 +97,14 @@ func (s *Service) HandleDriverMatchFailed(ctx context.Context, evt events.Envelo
 	return s.cancelBooking(ctx, evt.BookingID, "no driver available")
 }
 
+// HandlePaymentFailed reacts to payment.failed: this is the compensation
+// trigger. A driver had already been matched, but payment could not be
+// taken, so the booking is cancelled. The driver-matching service reacts
+// to the same event independently to release the driver it had reserved.
+func (s *Service) HandlePaymentFailed(ctx context.Context, evt events.Envelope) error {
+	return s.cancelBooking(ctx, evt.BookingID, "payment failed")
+}
+
 func (s *Service) cancelBooking(ctx context.Context, bookingID, reason string) error {
 	b, err := s.repo.FindByID(ctx, bookingID)
 	if err != nil {
