@@ -32,6 +32,11 @@ func (t *paymentTestCtx) theRidersPaymentMethodWillBeAccepted() error {
 	return nil
 }
 
+func (t *paymentTestCtx) theRidersPaymentMethodWillBeDeclinedForInsufficientFunds() error {
+	t.gateway.declineAll = true
+	return nil
+}
+
 func (t *paymentTestCtx) driverIsMatchedToBooking(driverID, bookingID string) error {
 	evt, err := events.NewEnvelope(events.TopicDriverMatched, bookingID, domain.DriverMatchedPayload{DriverID: driverID})
 	if err != nil {
@@ -71,6 +76,7 @@ func InitializeScenario(sc *godog.ScenarioContext) {
 	})
 
 	sc.Step(`^the rider's payment method will be accepted$`, t.theRidersPaymentMethodWillBeAccepted)
+	sc.Step(`^the rider's payment method will be declined for insufficient funds$`, t.theRidersPaymentMethodWillBeDeclinedForInsufficientFunds)
 	sc.Step(`^driver "([^"]*)" is matched to booking "([^"]*)"$`, t.driverIsMatchedToBooking)
 	sc.Step(`^a payment for booking "([^"]*)" should be recorded as "([^"]*)"$`, t.paymentForBookingShouldBeRecordedAs)
 	sc.Step(`^a "([^"]*)" event should be published for booking "([^"]*)"$`, t.anEventShouldBePublishedForBooking)
