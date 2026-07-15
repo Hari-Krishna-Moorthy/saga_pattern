@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/Hari-Krishna-Moorthy/ride-booking-saga/services/booking-service/internal/domain"
+	"github.com/Hari-Krishna-Moorthy/ride-booking-saga/shared/events"
 	"github.com/cucumber/godog"
 )
 
@@ -59,6 +60,15 @@ func (t *bookingTestCtx) anEventShouldBePublishedForTheBooking(topic string) err
 	return fmt.Errorf("expected a %q event for booking %s, got none (topic events: %d)", topic, t.booking.ID, len(published))
 }
 
+func (t *bookingTestCtx) paymentCompletesForTheBooking() error {
+	evt, err := events.NewEnvelope(events.TopicPaymentCompleted, t.booking.ID, struct{}{})
+	if err != nil {
+		return err
+	}
+	t.lastErr = t.service.HandlePaymentCompleted(context.Background(), evt)
+	return t.lastErr
+}
+
 func InitializeScenario(sc *godog.ScenarioContext) {
 	t := &bookingTestCtx{}
 
@@ -71,6 +81,7 @@ func InitializeScenario(sc *godog.ScenarioContext) {
 	sc.Step(`^I request a ride from "([^"]*)" to "([^"]*)"$`, t.iRequestARideFromTo)
 	sc.Step(`^the booking should be stored with status "([^"]*)"$`, t.theBookingShouldBeStoredWithStatus)
 	sc.Step(`^a "([^"]*)" event should be published for the booking$`, t.anEventShouldBePublishedForTheBooking)
+	sc.Step(`^payment completes for the booking$`, t.paymentCompletesForTheBooking)
 }
 
 func TestFeatures(t *testing.T) {

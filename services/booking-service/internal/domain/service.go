@@ -66,3 +66,27 @@ func (s *Service) RequestBooking(ctx context.Context, riderID, pickup, dropoff s
 
 	return b, nil
 }
+
+// HandlePaymentCompleted reacts to payment.completed: the saga has now
+// succeeded end-to-end, so the booking is confirmed and a ride.confirmed
+// event is published for the notification service.
+func (s *Service) HandlePaymentCompleted(ctx context.Context, evt events.Envelope) error {
+	b, err := s.repo.FindByID(ctx, evt.BookingID)
+	if err != nil {
+		return err
+	}
+
+	b.Status = StatusConfirmed
+	b.UpdatedAt = time.Now().UTC()
+
+	if err := s.repo.Update(ctx, b); err != nil {
+		return err
+	}
+
+	confirmedEvt, err := events.NewEnvelope(events.TopicRideConfirmed, b.ID, struct{}{})
+	if err != nil {
+		return err
+	}
+
+	return s.publisher.Publish(ctx, events.TopicRideConfirmed, confirmedEvt)
+}
