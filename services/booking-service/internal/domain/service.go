@@ -90,3 +90,33 @@ func (s *Service) HandlePaymentCompleted(ctx context.Context, evt events.Envelop
 
 	return s.publisher.Publish(ctx, events.TopicRideConfirmed, confirmedEvt)
 }
+
+// HandleDriverMatchFailed reacts to driver.match_failed: no driver could be
+// found, so the saga cannot proceed and the booking is cancelled.
+func (s *Service) HandleDriverMatchFailed(ctx context.Context, evt events.Envelope) error {
+	return s.cancelBooking(ctx, evt.BookingID, "no driver available")
+}
+
+func (s *Service) cancelBooking(ctx context.Context, bookingID, reason string) error {
+	b, err := s.repo.FindByID(ctx, bookingID)
+	if err != nil {
+		return err
+	}
+
+	b.Status = StatusCancelled
+	b.CancelReason = reason
+	b.UpdatedAt = time.Now().UTC()
+
+	if err := s.repo.Update(ctx, b); err != nil {
+		return err
+	}
+
+	cancelledEvt, err := events.NewEnvelope(events.TopicBookingCancelled, b.ID, struct {
+		Reason string `json:"reason"`
+	}{Reason: reason})
+	if err != nil {
+		return err
+	}
+
+	return s.publisher.Publish(ctx, events.TopicBookingCancelled, cancelledEvt)
+}
