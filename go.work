@@ -1,0 +1,9 @@
+go 1.25.12
+
+use (
+	./services/booking-service
+	./services/driver-matching-service
+	./services/notification-service
+	./services/payment-service
+	./shared
+)
