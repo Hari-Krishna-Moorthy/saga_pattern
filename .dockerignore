@@ -1,0 +1,4 @@
+.git
+**/*.feature
+**/features/
+**/*_test.go
